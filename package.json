@@ -1,5 +1,5 @@
 {
-  "name": "ViroSampleAR",
+  "name": "ReactNative-AR",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -8,9 +8,9 @@
     "test": "jest"
   },
   "dependencies": {
-    "react": "16.3.1",
-    "react-native": "0.55.1",
-    "react-viro": "2.12.0"
+    "react": "16.6.1",
+    "react-native": "0.57.7",
+    "react-viro": "2.13.0"
   },
   "devDependencies": {
     "babel-jest": "23.0.1",

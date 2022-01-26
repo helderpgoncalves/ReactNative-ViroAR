@@ -1,144 +1,173 @@
+'use strict';
+
 import React, { Component } from 'react';
-import {
-  AppRegistry,
-  ActivityIndicator,
-  Text,
-  View,
-  StyleSheet,
-  TouchableHighlight,
-  Image,
-  Alert,
-} from 'react-native';
+
+import {StyleSheet} from 'react-native';
 
 import {
-  ViroARSceneNavigator
+  ViroARScene,
+  ViroText,
+  ViroMaterials,
+  ViroBox,
+  Viro3DObject,
+  ViroAmbientLight,
+  ViroSpotLight,
+  ViroARPlane,
+  ViroARPlaneSelector,
+  ViroQuad,
+  ViroNode,
+  ViroAnimations,
+  ViroConstants
 } from 'react-viro';
 
-import renderIf from './js/helpers/renderIf';
-var InitialARScene = require('./js/ARHitTestSample');
+var createReactClass = require('create-react-class');
 
-// Array of 3d models that we use in this sample. This app switches between this these models.
-var objArray = [
-  require('./js/res/coffee_mug/object_coffee_mug.vrx'),
-  require('./js/res/object_flowers/object_flowers.vrx'),
-  require('./js/res/emoji_smile/emoji_smile.vrx')];
-
-export default class ViroSample extends Component {
-  constructor() {
-    super();
-
-    this._onShowObject = this._onShowObject.bind(this);
-    this._renderTrackingText = this._renderTrackingText.bind(this);
-    this._onTrackingInit = this._onTrackingInit.bind(this);
-    this._onDisplayDialog = this._onDisplayDialog.bind(this);
-    this._onLoadStart = this._onLoadStart.bind(this);
-    this._onLoadEnd = this._onLoadEnd.bind(this);
-
-    this.state = {
-      viroAppProps: {displayObject:false, objectSource:objArray[0], yOffset:0, _onLoadEnd: this._onLoadEnd, _onLoadStart: this._onLoadStart, _onTrackingInit:this._onTrackingInit},
-      trackingInitialized: false,
-      isLoading: false,
-    }
-  }
-
-  render() {
+var App = createReactClass({
+  getInitialState() {
+    return {
+      hasARInitialized : false,
+      text : "Initializing AR...",
+    };
+  },
+  render: function() {
     return (
-      <View style={localStyles.outer} >
-        <ViroARSceneNavigator style={localStyles.arView} apiKey="YOUR API KEY"
-          initialScene={{scene:InitialARScene, passProps:{displayObject:this.state.displayObject}}}  viroAppProps={this.state.viroAppProps}
-        />
+      <ViroARScene onTrackingUpdated={this._onTrackingUpdated}>
 
-        {this._renderTrackingText()}
+        {/* Text to show whether or not the AR system has initialized yet, see ViroARScene's onTrackingInitialized*/}
+        <ViroText text={this.state.text} scale={[.5, .5, .5]} position={[0, 0, -1]} style={styles.helloWorldTextStyle} />
 
-        {renderIf(this.state.isLoading,
-          <View style={{position:'absolute', left:0, right:0, top:0, bottom:0, alignItems: 'center', justifyContent:'center'}}>
-            <ActivityIndicator size='large' animating={this.state.isLoading} color='#ffffff'/>
-          </View>)
-        }
+        <ViroBox position={[0, -.5, -1]}
+          animation={{name: "rotate", run: true, loop: true}}
+          scale={[.3, .3, .1]} materials={["grid"]} />
 
-        <View style={{position: 'absolute',  left: 0, right: 0, bottom: 77, alignItems: 'center'}}>
-          <TouchableHighlight style={localStyles.buttons}
-            onPress={this._onDisplayDialog}
-            underlayColor={'#00000000'} >
-            <Image source={require("./js/res/btn_mode_objects.png")} />
-          </TouchableHighlight>
-        </View>
-      </View>
+        <ViroAmbientLight color={"#aaaaaa"} influenceBitMask={1} />
+
+        <ViroSpotLight
+            innerAngle={5}
+            outerAngle={90}
+            direction={[0,-1,-.2]}
+            position={[0, 3, 1]}
+            color="#aaaaaa"
+            castsShadow={true}
+            />
+
+        {/* Node that contains a light, an object and a surface to catch its shadow
+            notice that the dragType is "FixedToWorld" so the object can be dragged
+            along real world surfaces and points. */}
+        <ViroNode position={[-.5, -.5, -.5]} dragType="FixedToWorld" onDrag={()=>{}} >
+
+          {/* Spotlight to cast light on the object and a shadow on the surface, see
+              the Viro documentation for more info on lights & shadows */}
+          <ViroSpotLight
+            innerAngle={5}
+            outerAngle={45}
+            direction={[0,-1,-.2]}
+            position={[0, 3, 0]}
+            color="#ffffff"
+            castsShadow={true}
+            influenceBitMask={2}
+            shadowMapSize={2048}
+            shadowNearZ={2}
+            shadowFarZ={5}
+            shadowOpacity={.7} />
+
+          <Viro3DObject
+              source={require('.js/res/emoji_smile/emoji_smile.vrx')}
+              position={[0, .2, 0]}
+              scale={[.2, .2, .2]}
+              type="VRX"
+            lightReceivingBitMask={3}
+            shadowCastingBitMask={2}
+            transformBehaviors={['billboardY']}
+            resources={[require('.js/res/emoji_smile/emoji_smile_diffuse.png'),
+                       require('.js/res/emoji_smile/emoji_smile_specular.png'),
+                       require('.js/res/emoji_smile/emoji_smile_normal.png')]}/>
+
+          <ViroQuad
+            rotation={[-90,0,0]}
+            width={.5} height={.5}
+            arShadowReceiver={true}
+            lightReceivingBitMask={2} />
+
+        </ViroNode>
+
+        {/* Node that contains a light, an object and a surface to catch its shadow
+          notice that the dragType is "FixedToWorld" so the object can be dragged
+          along real world surfaces and points. */}
+        <ViroNode position={[.5,-.5,-.5]} dragType="FixedToWorld" onDrag={()=>{}} >
+
+          {/* Spotlight to cast light on the object and a shadow on the surface, see
+              the Viro documentation for more info on lights & shadows */}
+          <ViroSpotLight
+            innerAngle={5}
+            outerAngle={45}
+            direction={[0,-1,-.2]}
+            position={[0, 3, 0]}
+            color="#ffffff"
+            castsShadow={true}
+            influenceBitMask={4}
+            shadowMapSize={2048}
+            shadowNearZ={2}
+            shadowFarZ={5}
+            shadowOpacity={.7} />
+
+          <Viro3DObject
+            source={require('./res/object_soccerball/object_soccer_ball.vrx')}
+            position={[0, .15, 0]}
+            scale={[.3, .3, .3]}
+            type="VRX"
+            lightReceivingBitMask={5}
+            shadowCastingBitMask={4}
+            transformBehaviors={['billboardY']}
+            resources={[require('./res/object_soccerball/object_soccer_ball_diffuse.png'),
+                       require('./res/object_soccerball/object_soccer_ball_normal.png'),
+                       require('./res/object_soccerball/object_soccer_ball_specular.png')]}/>
+          <ViroQuad
+            rotation={[-90,0,0]}
+            width={.5} height={.5}
+            arShadowReceiver={true}
+            lightReceivingBitMask={4} />
+
+        </ViroNode>
+
+      </ViroARScene>
     );
-  }
-
-  // Invoked when a model has started to load, we show a loading indictator.
-  _onLoadStart() {
-    this.setState({
-      isLoading: true,
-    });
-  }
-
-  // Invoked when a model has loaded, we hide the loading indictator.
-  _onLoadEnd() {
-    this.setState({
-      isLoading: false,
-    });
-  }
-
-  _renderTrackingText() {
-    if(this.state.trackingInitialized) {
-      return (<View style={{position: 'absolute', backgroundColor:"#ffffff22", left: 30, right: 30, top: 30, alignItems: 'center'}}>
-        <Text style={{fontSize:12, color:"#ffffff"}}>Tracking initialized.</Text>
-      </View>);
-    } else {
-      return (<View style={{position: 'absolute', backgroundColor:"#ffffff22", left: 30, right: 30, top:30, alignItems: 'center'}}>
-        <Text style={{fontSize:12, color:"#ffffff"}}>Waiting for tracking to initialize.</Text>
-        </View>);
+  },
+  _onTrackingUpdated(state, reason) {
+    // if the state changes to "TRACKING_NORMAL" for the first time, then
+    // that means the AR session has initialized!
+    if (!this.state.hasARInitialized && state == ViroConstants.TRACKING_NORMAL) {
+      this.setState({
+        hasARInitialized : true,
+        text : "Hello World!"
+      });
     }
-  }
-
-  _onTrackingInit() {
-    this.setState({
-      trackingInitialized: true,
-    });
-  }
-
-  _onDisplayDialog() {
-    Alert.alert(
-    'Choose an object',
-    'Select an object to place in the world!',
-    [
-      {text: 'Coffee Mug', onPress: () => this._onShowObject(0, "coffee_mug", 0)},
-      {text: 'Flowers', onPress: () => this._onShowObject(1, "flowers", .290760)},
-      {text: 'Smile Emoji', onPress: () => this._onShowObject(2, "smile_emoji", .497823)},
-    ],
-    );
-  }
-
-  _onShowObject(objIndex, objUniqueName, yOffset) {
-    this.setState({
-        viroAppProps:{...this.state.viroAppProps, displayObject: true, yOffset: yOffset, displayObjectName: objUniqueName, objectSource:objArray[objIndex]},
-    });
-  }
-}
-
-var localStyles = StyleSheet.create({
-  outer : {
-    flex : 1,
-  },
-
-  arView: {
-    flex:1,
-  },
-
-  buttons : {
-    height: 80,
-    width: 80,
-    paddingTop:20,
-    paddingBottom:20,
-    marginTop: 10,
-    marginBottom: 10,
-    backgroundColor:'#00000000',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ffffff00',
   }
 });
 
-module.exports = ViroSample
+var styles = StyleSheet.create({
+  helloWorldTextStyle: {
+    fontFamily: 'Arial',
+    fontSize: 30,
+    color: '#ffffff',
+    textAlignVertical: 'center',
+    textAlign: 'center',
+  },
+});
+
+ViroMaterials.createMaterials({
+  grid: {
+    diffuseTexture: require('.js/res/grid_bg.jpg'),
+  },
+});
+
+ViroAnimations.registerAnimations({
+  rotate: {
+    properties: {
+      rotateY: "+=90"
+    },
+    duration: 250, //.25 seconds
+  },
+});
+
+module.exports = App;
